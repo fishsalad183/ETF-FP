@@ -1,0 +1,5 @@
+import scala.swing._
+
+object Main {
+  
+}
