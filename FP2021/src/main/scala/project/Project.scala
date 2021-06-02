@@ -2,14 +2,15 @@ package project
 
 import image.Image
 
-class Project(var images: Array[Image]) {
+class Project(var layers: Array[Layer]) {
 
-  def createNew() = ???
-  def load() = ???
-  def save() = ???
+  def save(): Unit = ???
 
 }
 
 object Project {
+
+  def createNew(): Project = ???
+  def load(): Project = ???
 
 }
