@@ -1,7 +1,7 @@
 package ui
 
-import image.{Image, RGB}
-import project.{Layer, Project}
+import image.{Image, Operation, RGB}
+import project.{Layer, Project, Selection}
 
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -21,13 +21,13 @@ class MainWindow(var project: Project) extends MainFrame {
     def setImage(): Unit = {
       contents.clear()
       contents += {
-        // FIX THE BUG HERE
-        var opacitySum = 0.0
-        val layers = project.layers filter(_.active) takeWhile { layer =>
-          opacitySum += layer.opacity
-          opacitySum <= 1.0
-        }
-        layers.foldLeft(new Image)((image, layer) => image blend(layer.image, layer.opacity))
+        (project.layers(0) blend project.layers(1)).image
+//        var opacitySum = 0.0
+//        val layers = project.layers filter(_.active) takeWhile { layer =>
+//          opacitySum += layer.opacity
+//          opacitySum <= 1.0
+//        }
+//        layers.foldLeft(new Image)((image, layer) => image blend(layer.image, layer.opacity))
       }
     }
     setImage()

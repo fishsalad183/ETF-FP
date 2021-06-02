@@ -48,7 +48,8 @@ class Image(val path: String, val transparency: Int) extends Component with Imag
         val rgb: RGB = that.img.getRGB(x, y)
         rgb * opacity
       }
-      result.img.setRGB(x, y, rgb1 + rgb2)
+      val test: Int = rgb1 * rgb2
+      result.img.setRGB(x, y, rgb1 * rgb2)
     }
     result
   }

@@ -15,7 +15,8 @@ object Main extends SimpleSwingApplication {
     img
   }
   val img3: Image = new Image("src/resource/image/wallhaven-4o7x1p.jpg", 100)
-  var project = new Project(Array(new Layer(img2, 0.5, true), new Layer(img3, 0.5, true)))
+  val img4: Image = new Image("src/resource/image/wallhaven-43kz59.jpg", 100)
+  var project = new Project(Array(new Layer(img3, 1.0, true), new Layer(img4, 1.0, true)))
 
   override def top: Frame = {
     val ui = new MainWindow(project)
