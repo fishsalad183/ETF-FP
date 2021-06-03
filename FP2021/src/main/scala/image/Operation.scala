@@ -15,6 +15,6 @@ case class Operation(f: RGB => RGB) {
 }
 
 object Operation {
-  def Fill(c: Color) = Operation(RGB => c.getRGB)
+  def Fill(c: Color) = Operation(_ => c.getRGB)
   def Add(rgb: RGB) = Operation((curr: RGB) => curr + rgb)
 }

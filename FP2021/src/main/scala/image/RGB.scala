@@ -15,8 +15,9 @@ case class RGB(var r: Double, var g: Double, var b: Double) {
 }
 
 object RGB {
-  implicit def intToRGB(rgb: Int): RGB = RGB((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF)
-  implicit def RGBToInt(rgb: RGB): Int = ((rgb.r * 255.0).toInt << 16) | ((rgb.g * 255.0).toInt << 8) | ((rgb.b * 255.0).toInt)
+  // BGR in BufferedImage implementation?
+  implicit def intToRGB(rgb: Int): RGB = RGB((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, (rgb >> 0) & 0xFF)
+  implicit def RGBToInt(rgb: RGB): Int = ((rgb.r * 255.0).toInt << 16) | ((rgb.g * 255.0).toInt << 8) | ((rgb.b * 255.0).toInt << 0)
 
   def apply(red: Int, green: Int, blue: Int) = new RGB(red / 255.0, green / 255.0, blue / 255.0)
 }

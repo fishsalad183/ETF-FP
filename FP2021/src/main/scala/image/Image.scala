@@ -13,7 +13,7 @@ import scala.swing.{Component, Graphics2D}
 class Image(val path: String, val transparency: Int) extends Component with ImageObserver {
   def this() = this("", 100)
 
-  val img = if (path != "") ImageIO.read(new File(path)) else new BufferedImage(1280, 800, BufferedImage.TYPE_INT_RGB)
+  val img = if (path != "") ImageIO.read(new File(path)) else new BufferedImage(1280, 800, BufferedImage.TYPE_3BYTE_BGR)
   if (path == "") {
     perform(Operation.Fill(Color.WHITE), Array(new Selection(0, 0, 1280, 800)))
   }
@@ -40,18 +40,20 @@ class Image(val path: String, val transparency: Int) extends Component with Imag
   }
 
   def blend(that: Image, opacity: Double): Image = {
-    val result = new Image(this.path, 0)
     for (y <- 0 until height;
-         x <- 0 until width) {
-      val rgb1: RGB = result.img.getRGB(x, y)
-      val rgb2: RGB = {
+         x <- 0 until width
+         if y < that.height && x < that.width) {
+      val rgb1: RGB = { // this/background
+        val rgb: RGB = this.img.getRGB(x, y)
+        rgb * (1 - opacity)
+      }
+      val rgb2: RGB = { // that/foreground
         val rgb: RGB = that.img.getRGB(x, y)
         rgb * opacity
       }
-      val test: Int = rgb1 * rgb2
-      result.img.setRGB(x, y, rgb1 * rgb2)
+      this.img.setRGB(x, y, rgb1 + rgb2)
     }
-    result
+    this
   }
 
 }

@@ -1,10 +1,9 @@
 package ui
 
-import image.{Image, Operation, RGB}
-import project.{Layer, Project, Selection}
+import image.Image
+import project.{Layer, Project}
 
 import java.awt.Color
-import java.awt.image.BufferedImage
 import scala.swing._
 import scala.swing.BorderPanel.Position._
 import scala.swing.Swing.LineBorder
@@ -16,18 +15,31 @@ class MainWindow(var project: Project) extends MainFrame {
 
 
 
-  val imagePanel = new BoxPanel(Orientation.NoOrientation) {
+  val imagePanel: BoxPanel = new BoxPanel(Orientation.NoOrientation) {
 
     def setImage(): Unit = {
       contents.clear()
       contents += {
-        (project.layers(0) blend project.layers(1)).image
-//        var opacitySum = 0.0
-//        val layers = project.layers filter(_.active) takeWhile { layer =>
+        var opacitySum: Double = 0.0
+        var count: Int = 0
+        for (layer <- project.layers filter(_.active) if opacitySum <= 1.0) {
+          opacitySum += layer.opacity
+          count += 1
+        }
+//        val layersWithoutLast = project.layers filter(_.active) takeWhile { layer =>
 //          opacitySum += layer.opacity
+//          count += 1
 //          opacitySum <= 1.0
 //        }
-//        layers.foldLeft(new Image)((image, layer) => image blend(layer.image, layer.opacity))
+        val layers = project.layers filter(_.active) take(if (opacitySum >= 2.0) count - 1 else count)
+
+        // allow the last layer to be visible only up to total opacity value of 1.0
+        if (opacitySum > 1.0 && opacitySum < 2.0) {
+          layers.update(layers.length - 1, new Layer(layers.last.image, layers.last.opacity - (opacitySum - 1.0), true))
+        }
+
+        val t = layers.foldLeft(new Image)((image, layer) => image blend(layer.image, layer.opacity))
+        t
       }
     }
     setImage()
@@ -48,7 +60,7 @@ class MainWindow(var project: Project) extends MainFrame {
 
 
 
-  val projectPanel = new GridPanel(3, 1) {
+  val projectPanel: GridPanel = new GridPanel(3, 1) {
     contents += new Label("Project")
 
     val buttonNew = new Button("New")
@@ -61,7 +73,7 @@ class MainWindow(var project: Project) extends MainFrame {
       }
     }
 
-    val buttonPanel = new FlowPanel {
+    val buttonPanel: FlowPanel = new FlowPanel {
       contents += buttonNew
       contents += new Button("Load")
       contents += new Button("Save")
@@ -73,15 +85,15 @@ class MainWindow(var project: Project) extends MainFrame {
 
 
 
-  val layerPanel = new GridPanel(4, 1) {
+  val layerPanel: GridPanel = new GridPanel(4, 1) {
     contents += new Label("Layer")
-    val layerChoicePanel = new FlowPanel {
+    val layerChoicePanel: FlowPanel = new FlowPanel {
       contents += new ComboBox[String](Array("L1", "L2", "L3"))
       contents += new Button("New")
     }
     contents += layerChoicePanel
     contents += new ToggleButton("Active")
-    val opacityPanel = new FlowPanel {
+    val opacityPanel: FlowPanel = new FlowPanel {
       contents += new Label("Opacity")
       contents += new Slider {
         min = 0
@@ -96,9 +108,9 @@ class MainWindow(var project: Project) extends MainFrame {
 
 
 
-  val selectionPanel = new GridPanel(4, 1) {
+  val selectionPanel: GridPanel = new GridPanel(4, 1) {
     contents += new Label("Selection")
-    val selectionChoicePanel = new FlowPanel {
+    val selectionChoicePanel: FlowPanel = new FlowPanel {
       contents += new ComboBox[String](Array("S1", "S2", "S3"))
       contents += new Button("Delete")
       contents += new Button("New")
@@ -110,9 +122,9 @@ class MainWindow(var project: Project) extends MainFrame {
   }
 
 
-  val optionPanel = new GridPanel(3, 1) {
+  val optionPanel: GridPanel = new GridPanel(3, 1) {
     contents += new Label("Operation")
-    val operationChoicePanel = new FlowPanel {
+    val operationChoicePanel: FlowPanel = new FlowPanel {
       contents += new ComboBox[String](Array("O1", "O2", "O3"))
       contents += new Button("New")
     }
@@ -128,7 +140,7 @@ class MainWindow(var project: Project) extends MainFrame {
 
   contents = new BorderPanel {
     layout(imagePanel) = Center
-    val menuPanel = new GridPanel(4, 1) {
+    val menuPanel: GridPanel = new GridPanel(4, 1) {
       contents += projectPanel
       contents += layerPanel
       contents += selectionPanel
