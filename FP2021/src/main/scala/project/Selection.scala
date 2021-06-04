@@ -10,7 +10,8 @@ import java.awt.Rectangle
 //
 //}
 
-class Selection(x: Int, y: Int, width: Int, height: Int) extends Rectangle(x, y, width, height) {
+@SerialVersionUID(103L)
+class Selection(x: Int, y: Int, width: Int, height: Int) extends Rectangle(x, y, width, height) with Serializable {
 
 
 

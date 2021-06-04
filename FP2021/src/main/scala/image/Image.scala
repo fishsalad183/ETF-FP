@@ -1,6 +1,5 @@
 package image
 
-import concepts.Rectangular
 import project.Selection
 
 import java.awt
@@ -10,12 +9,15 @@ import java.io.File
 import javax.imageio.ImageIO
 import scala.swing.{Component, Graphics2D}
 
-class Image private (val img: BufferedImage, val path: String = "") extends Component with ImageObserver {
-  def this(path: String) = this(ImageIO.read(new File(path)), path)
-  def this(width: Int, height: Int, color: Color) = {
-    this(new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR), "Color layer")
-    perform(Operation.Fill(color), Array(new Selection(0, 0, width, height)))
-  }
+@SerialVersionUID(102L)
+class Image private(val path: String = "", private val w: Int = 0, private val h: Int = 0, private val color: Color = null) extends Component with ImageObserver with Serializable {
+  @transient lazy val img: BufferedImage =
+    if (path != "") ImageIO.read(new File(path))
+    else Image.perform(Operation.Fill(color), new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR))
+
+  def this(path: String) = this(path, 0, 0, null)
+
+  def this(width: Int, height: Int, color: Color) = this("", width, height, color)
 
   def x: Int = img.getMinX
   def y: Int = img.getMinY
@@ -53,6 +55,17 @@ class Image private (val img: BufferedImage, val path: String = "") extends Comp
       this.img.setRGB(x, y, rgb1 + rgb2)
     }
     this
+  }
+
+}
+
+object Image {
+  private def copy(bi: BufferedImage): BufferedImage = new BufferedImage(bi.getColorModel, bi.copyData(null), bi.getColorModel.isAlphaPremultiplied, null)
+
+  private def perform(op: Operation, bi: BufferedImage): BufferedImage = {
+    val modifiedImage = Image.copy(bi)
+    for (y <- 0 until bi.getHeight; x <- 0 until bi.getWidth) op(modifiedImage, x, y)
+    modifiedImage
   }
 
 }

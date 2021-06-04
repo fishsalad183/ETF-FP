@@ -4,9 +4,11 @@ import image.Image
 import project.{Layer, Project}
 
 import java.awt.Color
-import scala.swing._
+import java.io.File
+import javax.swing.filechooser.FileNameExtensionFilter
 import scala.swing.BorderPanel.Position._
 import scala.swing.Swing.LineBorder
+import scala.swing._
 import scala.swing.event.{ButtonClicked, SelectionChanged, ValueChanged}
 
 class MainWindow(var project: Project) extends MainFrame {
@@ -50,21 +52,75 @@ class MainWindow(var project: Project) extends MainFrame {
     border = LineBorder(Color.BLACK, 1)
     contents += new Label("Project: " + project.imageWidth + "x" + project.imageHeight)
 
+    // create new project
     val buttonNew = new Button("New")
     listenTo(buttonNew)
     reactions += {
-      case ButtonClicked(buttonNew) => {
+      case ButtonClicked(`buttonNew`) => {
         project = new Project(1280, 800)
         refresh()
       }
     }
 
-    val buttonPanel: FlowPanel = new FlowPanel {
-      contents += buttonNew
-      contents += new Button("Load")
-      contents += new Button("Save")
+    // save project
+    val buttonSave = new Button("Save")
+    listenTo(buttonSave)
+    reactions += {
+      case ButtonClicked(`buttonSave`) => {
+        def chooseFile(): Option[File] = {
+          val chooser = new FileChooser() {
+            fileFilter = new FileNameExtensionFilter(".fp files", "fp")
+            selectedFile = new File("project.fp")
+          }
+          val result = chooser.showSaveDialog(null)
+          if (result == FileChooser.Result.Approve) Some(chooser.selectedFile)
+          else None
+        }
+
+        chooseFile() match {
+          case Some(file) => {
+            project.save(file)
+          }
+          case None => {}
+        }
+      }
     }
-    contents += buttonPanel
+
+    // load project
+    val buttonLoad = new Button("Load")
+    listenTo(buttonLoad)
+    reactions += {
+      case ButtonClicked(`buttonLoad`) => {
+        def chooseFile(): Option[File] = {
+          val chooser = new FileChooser() {
+            fileSelectionMode = FileChooser.SelectionMode.FilesOnly
+            fileFilter = new FileNameExtensionFilter(".fp files", "fp")
+          }
+          val result = chooser.showOpenDialog(null)
+          if (result == FileChooser.Result.Approve) Some(chooser.selectedFile)
+          else None
+        }
+
+        chooseFile() match {
+          case Some(file) => {
+            Project.load(file) match {
+              case Some(p) => {
+                project = p
+                refresh()
+              }
+              case None => {}
+            }
+          }
+          case None => {}
+        }
+      }
+    }
+
+    contents += new FlowPanel {
+      contents += buttonNew
+      contents += buttonLoad
+      contents += buttonSave
+    }
     contents += new Button("Export Image")
   }
 
@@ -105,7 +161,7 @@ class MainWindow(var project: Project) extends MainFrame {
       contents += checkboxActive
       listenTo(checkboxActive)
       reactions += {
-        case ButtonClicked(checboxActive) => {
+        case ButtonClicked(`checkboxActive`) => {
           project.layers(currentLayer).active = !project.layers(currentLayer).active
           refresh()
         }
@@ -122,7 +178,7 @@ class MainWindow(var project: Project) extends MainFrame {
       reactions += {
         case ValueChanged(`opacitySlider`) => {
           project.layers(currentLayer).opacity = opacitySlider.value.toDouble / 100.0
-          if (!opacitySlider.adjusting) refresh()
+          if (!opacitySlider.adjusting && project.layers(currentLayer).active) refresh()
         }
       }
       contents += new FlowPanel {
@@ -161,7 +217,7 @@ class MainWindow(var project: Project) extends MainFrame {
 
 
 
-  def refresh(): Unit = {
+  def refresh(guiOnly: Boolean = false): Unit = {
     super.repaint()
     for (content <- contents) {
       content.repaint()
