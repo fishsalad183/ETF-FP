@@ -10,12 +10,11 @@ import java.io.File
 import javax.imageio.ImageIO
 import scala.swing.{Component, Graphics2D}
 
-class Image(val path: String, val transparency: Int) extends Component with ImageObserver {
-  def this() = this("", 100)
-
-  val img = if (path != "") ImageIO.read(new File(path)) else new BufferedImage(1280, 800, BufferedImage.TYPE_3BYTE_BGR)
-  if (path == "") {
-    perform(Operation.Fill(Color.WHITE), Array(new Selection(0, 0, 1280, 800)))
+class Image private (val img: BufferedImage, val path: String = "") extends Component with ImageObserver {
+  def this(path: String) = this(ImageIO.read(new File(path)), path)
+  def this(width: Int, height: Int, color: Color) = {
+    this(new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR), "Color layer")
+    perform(Operation.Fill(color), Array(new Selection(0, 0, width, height)))
   }
 
   def x: Int = img.getMinX

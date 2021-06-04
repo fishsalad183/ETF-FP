@@ -7,17 +7,20 @@ import java.awt.Color
 import scala.swing._
 import scala.swing.BorderPanel.Position._
 import scala.swing.Swing.LineBorder
-import scala.swing.event.ButtonClicked
+import scala.swing.event.{ButtonClicked, SelectionChanged, ValueChanged}
 
 class MainWindow(var project: Project) extends MainFrame {
+  var currentLayer: Int = 0
   title = "Image Processing"
   preferredSize = new Dimension(1600, 900)
 
 
 
-  val imagePanel: BoxPanel = new BoxPanel(Orientation.NoOrientation) {
+  def imagePanel: BoxPanel = new BoxPanel(Orientation.NoOrientation) {
+    border = LineBorder(Color.BLACK, 1)
+    setContents()
 
-    def setImage(): Unit = {
+    def setContents(): Unit = {
       contents.clear()
       contents += {
         var opacitySum: Double = 0.0
@@ -26,11 +29,6 @@ class MainWindow(var project: Project) extends MainFrame {
           opacitySum += layer.opacity
           count += 1
         }
-//        val layersWithoutLast = project.layers filter(_.active) takeWhile { layer =>
-//          opacitySum += layer.opacity
-//          count += 1
-//          opacitySum <= 1.0
-//        }
         val layers = project.layers filter(_.active) take(if (opacitySum >= 2.0) count - 1 else count)
 
         // allow the last layer to be visible only up to total opacity value of 1.0
@@ -38,38 +36,26 @@ class MainWindow(var project: Project) extends MainFrame {
           layers.update(layers.length - 1, new Layer(layers.last.image, layers.last.opacity - (opacitySum - 1.0), true))
         }
 
-        val t = layers.foldLeft(new Image)((image, layer) => image blend(layer.image, layer.opacity))
-        t
+        layers.foldLeft(new Image(1280, 800, Color.WHITE))((image, layer) => image blend(layer.image, layer.opacity))
       }
     }
-    setImage()
-
-    override def revalidate(): Unit = {
-      super.revalidate()
-      setImage()
-    }
-
-    override def repaint(): Unit = {
-      super.repaint()
-      setImage()
-    }
-
-    border = LineBorder(Color.BLACK, 1)
   }
 
 
 
 
-  val projectPanel: GridPanel = new GridPanel(3, 1) {
-    contents += new Label("Project")
+
+
+  def projectPanel: GridPanel = new GridPanel(3, 1) {
+    border = LineBorder(Color.BLACK, 1)
+    contents += new Label("Project: " + project.imageWidth + "x" + project.imageHeight)
 
     val buttonNew = new Button("New")
     listenTo(buttonNew)
     reactions += {
       case ButtonClicked(buttonNew) => {
-        project = new Project(Array(new Layer(new Image("src/resource/image/wallhaven-4o7x1p.jpg", 100), 1, true)))
-        imagePanel.repaint()
-        imagePanel.revalidate()
+        project = new Project(1280, 800)
+        refresh()
       }
     }
 
@@ -80,35 +66,76 @@ class MainWindow(var project: Project) extends MainFrame {
     }
     contents += buttonPanel
     contents += new Button("Export Image")
-    border = LineBorder(Color.BLACK, 1)
   }
 
 
 
-  val layerPanel: GridPanel = new GridPanel(4, 1) {
-    contents += new Label("Layer")
-    val layerChoicePanel: FlowPanel = new FlowPanel {
-      contents += new ComboBox[String](Array("L1", "L2", "L3"))
-      contents += new Button("New")
-    }
-    contents += layerChoicePanel
-    contents += new ToggleButton("Active")
-    val opacityPanel: FlowPanel = new FlowPanel {
-      contents += new Label("Opacity")
-      contents += new Slider {
+  def layerPanel: GridPanel = new GridPanel(4, 1) {
+    border = LineBorder(Color.BLACK, 1)
+    setContents()
+
+    def setContents(): Unit = {
+      contents.clear()
+      contents += new Label("Layer")
+
+      // choosing layers
+      val layersChoice = new ComboBox[String]((project.layers.zipWithIndex map(layerIndex => (layerIndex._2 + 1) + ": " + layerIndex._1.image.path.split("/").last))) {
+        selection.index = currentLayer
+      }
+      listenTo(layersChoice.selection)
+      reactions += {
+        case SelectionChanged(`layersChoice`) => {
+          currentLayer = layersChoice.selection.index
+          refresh()
+        }
+      }
+
+      // creating a new layer
+
+
+      contents += new FlowPanel {
+        contents += layersChoice
+        contents += new Button("New")
+      }
+
+      // setting if active
+      val checkboxActive = new CheckBox("Active") {
+        selected = project.layers(currentLayer).active
+      }
+      contents += checkboxActive
+      listenTo(checkboxActive)
+      reactions += {
+        case ButtonClicked(checboxActive) => {
+          project.layers(currentLayer).active = !project.layers(currentLayer).active
+          refresh()
+        }
+      }
+
+      // setting opacity
+      val opacitySlider = new Slider {
         min = 0
         max = 100
-        value = 100
+        value = (project.layers(currentLayer).opacity * 100).toInt
         labels = Map(min -> new Label("0.00"), max -> new Label("1.00"))
       }
+      listenTo(opacitySlider)
+      reactions += {
+        case ValueChanged(`opacitySlider`) => {
+          project.layers(currentLayer).opacity = opacitySlider.value.toDouble / 100.0
+          if (!opacitySlider.adjusting) refresh()
+        }
+      }
+      contents += new FlowPanel {
+        contents += new Label("Opacity")
+        contents += opacitySlider
+      }
     }
-    contents += opacityPanel
-    border = LineBorder(Color.BLACK, 1)
   }
 
 
 
-  val selectionPanel: GridPanel = new GridPanel(4, 1) {
+  def selectionPanel: GridPanel = new GridPanel(4, 1) {
+    border = LineBorder(Color.BLACK, 1)
     contents += new Label("Selection")
     val selectionChoicePanel: FlowPanel = new FlowPanel {
       contents += new ComboBox[String](Array("S1", "S2", "S3"))
@@ -118,11 +145,11 @@ class MainWindow(var project: Project) extends MainFrame {
     contents += selectionChoicePanel
     contents += new ToggleButton("Active")
     contents += new Button("Fill")
-    border = LineBorder(Color.BLACK, 1)
   }
 
 
-  val optionPanel: GridPanel = new GridPanel(3, 1) {
+  def optionPanel: GridPanel = new GridPanel(3, 1) {
+    border = LineBorder(Color.BLACK, 1)
     contents += new Label("Operation")
     val operationChoicePanel: FlowPanel = new FlowPanel {
       contents += new ComboBox[String](Array("O1", "O2", "O3"))
@@ -130,23 +157,42 @@ class MainWindow(var project: Project) extends MainFrame {
     }
     contents += operationChoicePanel
     contents += new Button("Apply")
-    border = LineBorder(Color.BLACK, 1)
   }
 
 
 
-
+  def refresh(): Unit = {
+    super.repaint()
+    for (content <- contents) {
+      content.repaint()
+      content.revalidate()
+    }
+  }
 
 
   contents = new BorderPanel {
-    layout(imagePanel) = Center
-    val menuPanel: GridPanel = new GridPanel(4, 1) {
-      contents += projectPanel
-      contents += layerPanel
-      contents += selectionPanel
-      contents += optionPanel
+    setContents()
+
+    def setContents(): Unit = {
+      layout(imagePanel) = Center
+      val menuPanel: GridPanel = new GridPanel(4, 1) {
+        contents += projectPanel
+        contents += layerPanel
+        contents += selectionPanel
+        contents += optionPanel
+      }
+      layout(menuPanel) = West
     }
-    layout(menuPanel) = West
+
+    override def repaint(): Unit = {
+      super.repaint()
+      setContents()
+    }
+
+    override def revalidate(): Unit = {
+      super.revalidate()
+      setContents()
+    }
   }
 
 }
