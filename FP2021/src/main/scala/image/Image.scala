@@ -57,6 +57,8 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
     this
   }
 
+  def export(outputFile: File, fileFormat: String): Unit = ImageIO.write(img, fileFormat, outputFile)
+
 }
 
 object Image {
