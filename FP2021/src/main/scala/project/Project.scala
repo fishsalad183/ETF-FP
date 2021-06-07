@@ -4,12 +4,12 @@ import image.{Image, Operation}
 
 import java.awt.Color
 import java.io._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, Map}
 
 @SerialVersionUID(100L)
-class Project private (var layers: ArrayBuffer[Layer], val imageWidth: Int, val imageHeight: Int) extends Serializable {
-  var selections: ArrayBuffer[Selection] = ArrayBuffer(new Selection(0, 0, imageWidth, imageHeight))
-  val operations: Map[String, Operation] = Map("add" -> Operation.add(10))
+class Project private (val layers: ArrayBuffer[Layer], val imageWidth: Int, val imageHeight: Int) extends Serializable {
+  val selections: ArrayBuffer[Selection] = ArrayBuffer(new Selection(0, 0, imageWidth, imageHeight))
+  val operations: Map[String, Operation] = Map("id" -> Operation.id())
   var operationsPerformed = ArrayBuffer[(String, ArrayBuffer[Selection])]()
   var currentLayer: Int = 0
   var currentSelection: Int = 0
@@ -49,7 +49,7 @@ class Project private (var layers: ArrayBuffer[Layer], val imageWidth: Int, val 
       layers.update(layers.length - 1, new Layer(layers.last.image, layers.last.opacity - (opacitySum - 1.0), true))
     }
 
-    this.resultingImage = layers.foldLeft(new Image(1280, 800, Color.WHITE))((image, layer) => image blend(layer.image, layer.opacity))
+    this.resultingImage = layers.foldLeft(new Image(imageWidth, imageHeight, Color.WHITE))((image, layer) => image blend(layer.image, layer.opacity))
   }
 
   def evaluateOperations(): Unit = {

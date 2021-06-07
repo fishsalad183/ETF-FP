@@ -19,13 +19,8 @@ case class Operation(f: RGB => RGB) {
 object Operation {
   implicit def funcToOperation(f: RGB => RGB): Operation = Operation(f)
 
+  def id(): Operation = (rgb: RGB) => rgb
   def fill(c: Color): Operation = (rgb: RGB) => RGB.intToRGB(c.getRGB)
-  def add(value: Int): Operation = (rgb: RGB) => rgb + value
-  def sub(value: Int): Operation = (rgb: RGB) => rgb - value
-
-  val operations: Map[String, (String, Nothing => Operation)] = Map(
-    "fill" -> ("Color", fill _),
-    "add" -> ("Int", add _),
-    "sub" -> ("Int", sub _),
-  )
+  def add(value: Double): Operation = (rgb: RGB) => rgb + value
+  def sub(value: Double): Operation = (rgb: RGB) => rgb - value
 }

@@ -282,7 +282,7 @@ class MainWindow(var project: Project) extends MainFrame {
     listenTo(selectionChoice.selection)
     reactions += {
       case SelectionChanged(`selectionChoice`) =>
-        project.currentOperation = selectionChoice.selection.index
+        project.currentSelection = selectionChoice.selection.index
         refresh()
     }
 
@@ -313,22 +313,65 @@ class MainWindow(var project: Project) extends MainFrame {
     contents += new Label("Operation")
 
     // operation choice
-    val operationChoice: ComboBox[String] = new ComboBox[String](project.operations.keys.toSeq) {
-      selection.index = project.currentOperation
-    }
-    listenTo(operationChoice.selection)
-    reactions += {
-      case SelectionChanged(`operationChoice`) =>
-        project.currentOperation = operationChoice.selection.index
-        refresh()
-    }
+    val operationChoice: ComboBox[String] = new ComboBox[String](project.operations.keys.toSeq)
 
     // creating a new operation
-    val popupMenu = new Frame() {
+    def operationsPopup = new Frame() {
       preferredSize = new Dimension(400, 400)
-      val newOperationChoice: ComboBox[String] = new ComboBox[String](Operation.operations.keys.toSeq)
-      contents = new GridPanel(3, 1) {
-        contents += newOperationChoice
+      var composedOperation: Operation = Operation.id()
+      contents = new BoxPanel(Orientation.Vertical) {
+        val predefinedOperations: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub"))
+        contents += new FlowPanel() {
+          contents += new Label("Operation") += predefinedOperations
+        }
+        val valueField1 = new TextField(20)
+        contents += new FlowPanel() {
+          contents += new Label("Value 1") += valueField1
+        }
+        val valueField2 = new TextField(20)
+        contents += new FlowPanel() {
+          contents += new Label("Value 2") += valueField2
+        }
+        val valueField3 = new TextField(20)
+        contents += new FlowPanel() {
+          contents += new Label("Value 3") += valueField3
+        }
+
+        val buttonCompose = new Button("Compose")
+        listenTo(buttonCompose)
+        reactions += {
+          case ButtonClicked(`buttonCompose`) =>
+            composedOperation = composedOperation andThen {
+              predefinedOperations.selection.item match {
+                case "fill" => Operation.fill(new Color(valueField1.text.toFloat, valueField2.text.toFloat, valueField3.text.toFloat))
+                case "add" => Operation.add(valueField1.text.toDouble)
+                case "sub" => Operation.sub(valueField1.text.toDouble)
+              }
+            }
+            buttonCreate.enabled = true
+        }
+
+        contents += new FlowPanel() {
+          contents += buttonCompose
+        }
+
+        val nameField = new TextField(20) {
+          name = "Function name"
+        }
+        val buttonCreate = new Button("Create") {
+          enabled = false
+        }
+        listenTo(buttonCreate)
+        reactions += {
+          case ButtonClicked(`buttonCreate`) =>
+            project.operations += (nameField.text -> composedOperation)
+            close()
+            refresh()
+        }
+
+        contents += new FlowPanel() {
+          contents += nameField += buttonCreate
+        }
       }
     }
 
@@ -336,7 +379,7 @@ class MainWindow(var project: Project) extends MainFrame {
     listenTo(buttonNew)
     reactions += {
       case ButtonClicked(`buttonNew`) =>
-        popupMenu.visible = true
+        operationsPopup.visible = true
     }
 
     contents += new FlowPanel {

@@ -36,7 +36,7 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
   def perform(op: Operation, on: Array[Selection] = Array(new Selection(x, y, width, height))): Unit = {
     for (y <- 0 until height;
          x <- 0 until width) {
-      if (on.filter(_.active).exists(_.contains(x, y))) op(img, x, y)
+      if (on.exists(_.contains(x, y))) op(img, x, y)
     }
   }
 

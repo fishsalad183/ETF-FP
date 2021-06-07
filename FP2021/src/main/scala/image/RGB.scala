@@ -9,8 +9,10 @@ case class RGB(var r: Double, var g: Double, var b: Double) {
   if (b < 0) b = 0 else if (b > 1.0) b = 1.0
 
   def +(that: RGB) = RGB(this.r + that.r, this.g + that.g, this.b + that.b)
+  def +(value: Double) = RGB(this.r + value, this.g + value, this.b + value)
   def -(that: RGB) = RGB(this.r - that.r, this.g - that.g, this.b - that.b)
-  def *(that: RGB) = RGB(this.r * that.r, this.g * that.g, this.b * that.g)
+  def -(value: Double) = RGB(this.r - value, this.g - value, this.b - value)
+  def *(that: RGB) = RGB(this.r * that.r, this.g * that.g, this.b * that.b)
   def *(value: Double) = RGB(this.r * value, this.g * value, this.b * value)
 }
 
