@@ -271,7 +271,7 @@ class MainWindow(var project: Project) extends MainFrame {
 
 
 
-  def selectionPanel: GridPanel = new GridPanel(2, 1) {
+  def selectionPanel: GridPanel = new GridPanel(3, 1) {
     border = LineBorder(Color.BLACK, 1)
     contents += new Label("Selection")
 
@@ -297,6 +297,7 @@ class MainWindow(var project: Project) extends MainFrame {
         refresh()
     }
 
+    // deleting a selection
     val buttonDelete = new Button("Delete")
     listenTo(buttonDelete)
     reactions += {
@@ -308,6 +309,15 @@ class MainWindow(var project: Project) extends MainFrame {
     contents += new FlowPanel {
       contents += selectionChoice += checkboxActive += buttonDelete
     }
+
+    // showing/hiding selections
+    val buttonShowHide = new Button("Show/hide active")
+    listenTo(buttonShowHide)
+    reactions += {
+      case ButtonClicked(`buttonShowHide`) =>
+        project.selections filter(_.active) foreach(_.visible = true)
+    }
+    contents += buttonShowHide
   }
 
 
@@ -322,7 +332,7 @@ class MainWindow(var project: Project) extends MainFrame {
     }
 
     // creating a new operation
-    def operationsPopup = new Frame() {
+    def operationsPopup: Frame = new Frame() {
       preferredSize = new Dimension(400, 400)
       var composedOperation: Operation = Operation.id()
       contents = new BoxPanel(Orientation.Vertical) {
@@ -364,9 +374,7 @@ class MainWindow(var project: Project) extends MainFrame {
           contents += buttonCompose
         }
 
-        val nameField = new TextField(20) {
-
-        }
+        val nameField = new TextField(20)
         val buttonCreate = new Button("Create") {
           enabled = false
         }

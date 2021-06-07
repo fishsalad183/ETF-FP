@@ -1,5 +1,8 @@
 package image
 
+import javafx.geometry.Orientation
+import project.Selection
+
 import java.awt.Color
 import java.awt.image.BufferedImage
 
@@ -11,6 +14,13 @@ case class Operation(f: RGB => RGB) {
     img.setRGB(x, y, f(img.getRGB(x, y)))
     img
   }
+//  def apply(img: BufferedImage, on: Array[Selection]): BufferedImage = {
+//    val copy = Image.copy(img)
+//    for (y <- 0 until img.getHeight;
+//         x <- 0 until img.getWidth
+//         if on.exists(_.contains(x, y))) copy.setRGB(x, y) = f(img.getRGB(x, y))
+//    copy
+//  }
 
   def andThen(that: Operation): Operation = this.f andThen that.f
 
@@ -29,4 +39,7 @@ object Operation {
     val avg: Double = (rgb.r + rgb.g + rgb.b) / 3.0
     RGB(avg, avg, avg)
   }
+//  def median(orientation: Orientation, n: Int): Operation = (rgb: RGB) => {
+//
+//  }
 }

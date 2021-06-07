@@ -63,7 +63,7 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
 }
 
 object Image {
-  private def copy(bi: BufferedImage): BufferedImage = new BufferedImage(bi.getColorModel, bi.copyData(null), bi.getColorModel.isAlphaPremultiplied, null)
+  def copy(bi: BufferedImage): BufferedImage = new BufferedImage(bi.getColorModel, bi.copyData(null), bi.getColorModel.isAlphaPremultiplied, null)
 
   private def perform(op: Operation, bi: BufferedImage): BufferedImage = {
     val modifiedImage = Image.copy(bi)
