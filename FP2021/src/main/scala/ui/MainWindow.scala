@@ -1,7 +1,7 @@
 package ui
 
-import image.Image
-import project.{Layer, Project, Selection}
+import image.{Image, Operation}
+import project.{Project, Selection}
 
 import java.awt.Color
 import java.io.File
@@ -16,29 +16,45 @@ class MainWindow(var project: Project) extends MainFrame {
   title = "Image Processing"
   preferredSize = new Dimension(1700, 900)
 
-
-
-  def imagePanel: BoxPanel = new BoxPanel(Orientation.NoOrientation) {
-    border = LineBorder(Color.BLACK, 1)
+  contents = new BorderPanel {
     setContents()
 
     def setContents(): Unit = {
+      layout(imagePanel) = Center
+      val menuPanel: GridPanel = new GridPanel(4, 1) {
+        contents += projectPanel += layerPanel += selectionPanel += operationPanel
+      }
+      layout(menuPanel) = West
+    }
+
+    override def repaint(): Unit = {
+      super.repaint()
+      setContents()
+    }
+
+    override def revalidate(): Unit = {
+      super.revalidate()
+      setContents()
+    }
+  }
+
+  def refresh(guiOnly: Boolean = false): Unit = {
+    super.repaint()
+    for (content <- contents) {
+      content.repaint()
+      content.revalidate()
+    }
+  }
+
+  def imagePanel: BoxPanel = new BoxPanel(Orientation.NoOrientation) {
+    border = LineBorder(Color.BLACK, 1)
+    refreshImage()
+
+    def refreshImage(): Unit = {
       contents.clear()
       contents += {
-        var opacitySum: Double = 0.0
-        var count: Int = 0
-        for (layer <- project.layers filter(_.active) if opacitySum <= 1.0) {
-          opacitySum += layer.opacity
-          count += 1
-        }
-        val layers = project.layers filter(_.active) take(if (opacitySum >= 2.0) count - 1 else count)
-
-        // allow the last layer to be visible only up to total opacity value of 1.0
-        if (opacitySum > 1.0 && opacitySum < 2.0) {
-          layers.update(layers.length - 1, new Layer(layers.last.image, layers.last.opacity - (opacitySum - 1.0), true))
-        }
-
-        project.resultingImage = layers.foldLeft(new Image(1280, 800, Color.WHITE))((image, layer) => image blend(layer.image, layer.opacity))
+        project.evaluateLayers()
+        project.evaluateOperations()
         project.resultingImage
       }
     }
@@ -54,6 +70,7 @@ class MainWindow(var project: Project) extends MainFrame {
           val x2 = clickCoordinates(1)._1
           val y2 = clickCoordinates(1)._2
           project.selections += new Selection(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(y1 - y2))
+          project.currentSelection = project.selections.indices.last
           clickCoordinates.clear()
           refresh()
         }
@@ -198,7 +215,6 @@ class MainWindow(var project: Project) extends MainFrame {
         contents += buttonNewEmptyLayer += buttonLoadImage
       }
 
-
       // choosing layers
       val layersChoice = new ComboBox[String](project.layers.zipWithIndex map(layerIndex => (layerIndex._2 + 1) + ": " + layerIndex._1.image.path.split("[\\\\/]").last)) {
         selection.index = project.currentLayer
@@ -209,7 +225,6 @@ class MainWindow(var project: Project) extends MainFrame {
           project.currentLayer = layersChoice.selection.index
           refresh()
       }
-
 
       // activating/deactivating a layer
       val checkboxActive = new CheckBox("Active") {
@@ -259,9 +274,31 @@ class MainWindow(var project: Project) extends MainFrame {
   def selectionPanel: GridPanel = new GridPanel(3, 1) {
     border = LineBorder(Color.BLACK, 1)
     contents += new Label("Selection")
+
+    // choosing a selection
+    val selectionChoice: ComboBox[String] = new ComboBox[String](for (i <- project.selections.indices) yield i.toString) {
+      selection.index = project.currentSelection
+    }
+    listenTo(selectionChoice.selection)
+    reactions += {
+      case SelectionChanged(`selectionChoice`) =>
+        project.currentOperation = selectionChoice.selection.index
+        refresh()
+    }
+
+    // activating/deactivating a selection
+    val checkboxActive: CheckBox = new CheckBox("Active") {
+      selected = project.selections(project.currentSelection).active
+    }
+    listenTo(checkboxActive)
+    reactions += {
+      case ButtonClicked(`checkboxActive`) =>
+        project.selections(project.currentSelection).active = !project.selections(project.currentSelection).active
+        refresh()
+    }
+
     val selectionChoicePanel: FlowPanel = new FlowPanel {
-      contents += new ComboBox[String](for (i <- project.selections.indices) yield i.toString)
-      contents += new CheckBox("Active")
+      contents += selectionChoice += checkboxActive
       contents += new Button("Delete")
       contents += new Button("New")
     }
@@ -270,49 +307,51 @@ class MainWindow(var project: Project) extends MainFrame {
   }
 
 
-  def optionPanel: GridPanel = new GridPanel(3, 1) {
+
+  def operationPanel: GridPanel = new GridPanel(3, 1) {
     border = LineBorder(Color.BLACK, 1)
     contents += new Label("Operation")
-    val operationChoicePanel: FlowPanel = new FlowPanel {
-      contents += new ComboBox[String](Array("O1", "O2", "O3"))
-      contents += new Button("New")
+
+    // operation choice
+    val operationChoice: ComboBox[String] = new ComboBox[String](project.operations.keys.toSeq) {
+      selection.index = project.currentOperation
     }
-    contents += operationChoicePanel
-    contents += new Button("Apply")
-  }
-
-
-
-  def refresh(guiOnly: Boolean = false): Unit = {
-    super.repaint()
-    for (content <- contents) {
-      content.repaint()
-      content.revalidate()
+    listenTo(operationChoice.selection)
+    reactions += {
+      case SelectionChanged(`operationChoice`) =>
+        project.currentOperation = operationChoice.selection.index
+        refresh()
     }
-  }
 
-
-  contents = new BorderPanel {
-    setContents()
-
-    def setContents(): Unit = {
-      layout(imagePanel) = Center
-      val menuPanel: GridPanel = new GridPanel(4, 1) {
-        contents += projectPanel += layerPanel += selectionPanel += optionPanel
+    // creating a new operation
+    val popupMenu = new Frame() {
+      preferredSize = new Dimension(400, 400)
+      val newOperationChoice: ComboBox[String] = new ComboBox[String](Operation.operations.keys.toSeq)
+      contents = new GridPanel(3, 1) {
+        contents += newOperationChoice
       }
-      layout(menuPanel) = West
     }
 
-    override def repaint(): Unit = {
-      super.repaint()
-      setContents()
+    val buttonNew = new Button("New")
+    listenTo(buttonNew)
+    reactions += {
+      case ButtonClicked(`buttonNew`) =>
+        popupMenu.visible = true
     }
 
-    override def revalidate(): Unit = {
-      super.revalidate()
-      setContents()
+    contents += new FlowPanel {
+      contents += operationChoice += buttonNew
     }
+
+    // applying an operation
+    val buttonApply = new Button("Apply")
+    listenTo(buttonApply)
+    reactions += {
+      case ButtonClicked(`buttonApply`) =>
+        project.operationsPerformed += ((operationChoice.selection.item, project.selections filter(_.active)))
+        refresh()
+    }
+    contents += buttonApply
   }
-
 }
 

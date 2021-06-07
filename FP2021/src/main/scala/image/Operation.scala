@@ -12,9 +12,20 @@ case class Operation(f: RGB => RGB) {
     img
   }
 
+  def andThen(that: Operation): Operation = this.f andThen that.f
+
 }
 
 object Operation {
-  def Fill(c: Color) = Operation(_ => c.getRGB)
-  def Add(rgb: RGB) = Operation((curr: RGB) => curr + rgb)
+  implicit def funcToOperation(f: RGB => RGB): Operation = Operation(f)
+
+  def fill(c: Color): Operation = (rgb: RGB) => RGB.intToRGB(c.getRGB)
+  def add(value: Int): Operation = (rgb: RGB) => rgb + value
+  def sub(value: Int): Operation = (rgb: RGB) => rgb - value
+
+  val operations: Map[String, (String, Nothing => Operation)] = Map(
+    "fill" -> ("Color", fill _),
+    "add" -> ("Int", add _),
+    "sub" -> ("Int", sub _),
+  )
 }

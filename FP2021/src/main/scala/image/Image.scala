@@ -13,7 +13,7 @@ import scala.swing.{Component, Graphics2D}
 class Image private(val path: String = "", private val w: Int = 0, private val h: Int = 0, private val color: Color = null) extends Component with ImageObserver with Serializable {
   @transient lazy val img: BufferedImage =
     if (path != "") ImageIO.read(new File(path))
-    else Image.perform(Operation.Fill(color), new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR))
+    else Image.perform(Operation.fill(color), new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR))
 
   def this(path: String) = this(path, 0, 0, null)
 
@@ -33,10 +33,10 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
     false
   }
 
-  def perform(op: Operation, on: Array[Selection]): Unit = {
+  def perform(op: Operation, on: Array[Selection] = Array(new Selection(x, y, width, height))): Unit = {
     for (y <- 0 until height;
          x <- 0 until width) {
-      if (on.exists(_.contains(x, y))) op(img, x, y)
+      if (on.filter(_.active).exists(_.contains(x, y))) op(img, x, y)
     }
   }
 

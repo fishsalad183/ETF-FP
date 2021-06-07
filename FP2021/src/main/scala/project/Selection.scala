@@ -11,7 +11,7 @@ import java.awt.Rectangle
 //}
 
 @SerialVersionUID(103L)
-class Selection(x: Int, y: Int, width: Int, height: Int) extends Rectangle(x, y, width, height) with Serializable {
+class Selection(x: Int, y: Int, width: Int, height: Int, var active: Boolean = true) extends Rectangle(x, y, width, height) with Serializable {
   // TODO: RECTANGLE IS NOT SERIALIZABLE???
 
 
