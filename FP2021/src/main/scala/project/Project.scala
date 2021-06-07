@@ -13,7 +13,7 @@ class Project private (val layers: ArrayBuffer[Layer], val imageWidth: Int, val 
   var operationsPerformed = ArrayBuffer[(String, ArrayBuffer[Selection])]()
   var currentLayer: Int = 0
   var currentSelection: Int = 0
-  var currentOperation: Int = 0
+  var currentOperation: String = "id"
   @transient var resultingImage: Image = null
 
   def this(layers: ArrayBuffer[Layer]) = this(layers, layers(0).image.width, layers(0).image.height)
@@ -32,7 +32,16 @@ class Project private (val layers: ArrayBuffer[Layer], val imageWidth: Int, val 
 
   def deleteCurrentLayer(): Unit = {
     layers.remove(currentLayer)
+    if (layers.isEmpty) layers += new Layer(imageWidth, imageHeight, Color.WHITE)
     currentLayer = 0
+  }
+
+  def deleteCurrentSelection(): Unit = {
+    val sel = selections(currentSelection)
+    selections -= sel
+    operationsPerformed.foreach(_._2 -= sel)
+    if (selections.isEmpty) selections += new Selection(0, 0, imageWidth, imageHeight)
+    currentSelection = 0
   }
 
   def evaluateLayers(): Unit = {

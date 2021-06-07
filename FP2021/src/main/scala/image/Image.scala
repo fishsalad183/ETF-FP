@@ -16,7 +16,6 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
     else Image.perform(Operation.fill(color), new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR))
 
   def this(path: String) = this(path, 0, 0, null)
-
   def this(width: Int, height: Int, color: Color) = this("", width, height, color)
 
   def x: Int = img.getMinX
@@ -58,6 +57,8 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
   }
 
   def export(outputFile: File, fileFormat: String): Unit = ImageIO.write(img, fileFormat, outputFile)
+
+  override def toString: String = if (path != "") path.split("[\\\\/]").last else color.toString
 
 }
 

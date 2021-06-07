@@ -216,7 +216,7 @@ class MainWindow(var project: Project) extends MainFrame {
       }
 
       // choosing layers
-      val layersChoice = new ComboBox[String](project.layers.zipWithIndex map(layerIndex => (layerIndex._2 + 1) + ": " + layerIndex._1.image.path.split("[\\\\/]").last)) {
+      val layersChoice = new ComboBox[String](project.layers.zipWithIndex map(layerAndIndex => (layerAndIndex._2 + 1) + ": " + layerAndIndex._1.image.toString())) {
         selection.index = project.currentLayer
       }
       listenTo(layersChoice.selection)
@@ -271,12 +271,12 @@ class MainWindow(var project: Project) extends MainFrame {
 
 
 
-  def selectionPanel: GridPanel = new GridPanel(3, 1) {
+  def selectionPanel: GridPanel = new GridPanel(2, 1) {
     border = LineBorder(Color.BLACK, 1)
     contents += new Label("Selection")
 
     // choosing a selection
-    val selectionChoice: ComboBox[String] = new ComboBox[String](for (i <- project.selections.indices) yield i.toString) {
+    val selectionChoice: ComboBox[String] = new ComboBox[String](project.selections map(_.toString)) {
       selection.index = project.currentSelection
     }
     listenTo(selectionChoice.selection)
@@ -297,13 +297,17 @@ class MainWindow(var project: Project) extends MainFrame {
         refresh()
     }
 
-    val selectionChoicePanel: FlowPanel = new FlowPanel {
-      contents += selectionChoice += checkboxActive
-      contents += new Button("Delete")
-      contents += new Button("New")
+    val buttonDelete = new Button("Delete")
+    listenTo(buttonDelete)
+    reactions += {
+      case ButtonClicked(`buttonDelete`) =>
+        project.deleteCurrentSelection()
+        refresh()
     }
-    contents += selectionChoicePanel
-    contents += new Button("Fill")
+
+    contents += new FlowPanel {
+      contents += selectionChoice += checkboxActive += buttonDelete
+    }
   }
 
 
@@ -313,14 +317,16 @@ class MainWindow(var project: Project) extends MainFrame {
     contents += new Label("Operation")
 
     // operation choice
-    val operationChoice: ComboBox[String] = new ComboBox[String](project.operations.keys.toSeq)
+    val operationChoice: ComboBox[String] = new ComboBox[String](project.operations.keys.toSeq) {
+      selection.item = project.currentOperation
+    }
 
     // creating a new operation
     def operationsPopup = new Frame() {
       preferredSize = new Dimension(400, 400)
       var composedOperation: Operation = Operation.id()
       contents = new BoxPanel(Orientation.Vertical) {
-        val predefinedOperations: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub"))
+        val predefinedOperations: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub", "pow", "inv", "grayscale") ++ project.operations.keys)
         contents += new FlowPanel() {
           contents += new Label("Operation") += predefinedOperations
         }
@@ -346,6 +352,9 @@ class MainWindow(var project: Project) extends MainFrame {
                 case "fill" => Operation.fill(new Color(valueField1.text.toFloat, valueField2.text.toFloat, valueField3.text.toFloat))
                 case "add" => Operation.add(valueField1.text.toDouble)
                 case "sub" => Operation.sub(valueField1.text.toDouble)
+                case "pow" => Operation.pow(valueField1.text.toDouble)
+                case "inv" => Operation.inv()
+                case "grayscale" => Operation.grayscale()
               }
             }
             buttonCreate.enabled = true
@@ -356,7 +365,7 @@ class MainWindow(var project: Project) extends MainFrame {
         }
 
         val nameField = new TextField(20) {
-          name = "Function name"
+
         }
         val buttonCreate = new Button("Create") {
           enabled = false
@@ -366,6 +375,7 @@ class MainWindow(var project: Project) extends MainFrame {
           case ButtonClicked(`buttonCreate`) =>
             project.operations += (nameField.text -> composedOperation)
             close()
+            project.currentOperation = nameField.text
             refresh()
         }
 

@@ -23,4 +23,10 @@ object Operation {
   def fill(c: Color): Operation = (rgb: RGB) => RGB.intToRGB(c.getRGB)
   def add(value: Double): Operation = (rgb: RGB) => rgb + value
   def sub(value: Double): Operation = (rgb: RGB) => rgb - value
+  def pow(value: Double): Operation = (rgb: RGB) => RGB(math.pow(rgb.r, value), math.pow(rgb.g, value), math.pow(rgb.b, value))
+  def inv(): Operation = (rgb: RGB) => RGB(1.0 - rgb.r, 1.0 - rgb.g, 1.0 -rgb.b)
+  def grayscale(): Operation = (rgb: RGB) => {
+    val avg: Double = (rgb.r + rgb.g + rgb.b) / 3.0
+    RGB(avg, avg, avg)
+  }
 }
