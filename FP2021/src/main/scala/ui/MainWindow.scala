@@ -334,9 +334,9 @@ class MainWindow(var project: Project) extends MainFrame {
     // creating a new operation
     def operationsPopup: Frame = new Frame() {
       preferredSize = new Dimension(400, 400)
-      var composedOperation: Operation = Operation.id()
+      var composedOperation: Operation = Operation.id
       contents = new BoxPanel(Orientation.Vertical) {
-        val predefinedOperations: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub", "pow", "inv", "grayscale") ++ project.operations.keys)
+        val predefinedOperations: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub", "pow", "inv", "grayscale", "median") ++ project.operations.keys)
         contents += new FlowPanel() {
           contents += new Label("Operation") += predefinedOperations
         }
@@ -365,6 +365,8 @@ class MainWindow(var project: Project) extends MainFrame {
                 case "pow" => Operation.pow(valueField1.text.toDouble)
                 case "inv" => Operation.inv()
                 case "grayscale" => Operation.grayscale()
+                case "median" => Operation.median(valueField1.text.toInt, if (valueField2.text == "v") Orientation.Vertical else Orientation.Horizontal)
+                case custom => project.operations(custom)
               }
             }
             buttonCreate.enabled = true

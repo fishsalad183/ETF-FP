@@ -33,10 +33,11 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
   }
 
   def perform(op: Operation, on: Array[Selection] = Array(new Selection(x, y, width, height))): Unit = {
-    for (y <- 0 until height;
-         x <- 0 until width) {
-      if (on.exists(_.contains(x, y))) op(img, x, y)
-    }
+//    for (y <- 0 until height;
+//         x <- 0 until width) {
+//      if (on.exists(_.contains(x, y))) op(img, x, y)
+//    }
+    op(img, on)
   }
 
   def blend(that: Image, opacity: Double): Image = {
@@ -67,7 +68,7 @@ object Image {
 
   private def perform(op: Operation, bi: BufferedImage): BufferedImage = {
     val modifiedImage = Image.copy(bi)
-    for (y <- 0 until bi.getHeight; x <- 0 until bi.getWidth) op(modifiedImage, x, y)
+    op(modifiedImage, Array(new Selection(0, 0, modifiedImage.getWidth, modifiedImage.getHeight)))
     modifiedImage
   }
 
