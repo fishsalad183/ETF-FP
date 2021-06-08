@@ -38,22 +38,6 @@ class FilterOperation(g: List[RGB] => RGB, n: Int = 0, o: Orientation.Value = Or
   private def getNeighborRGBs(img: BufferedImage, ofX: Int, ofY: Int): List[RGB] = {
     if (o == Orientation.Horizontal) (for (x <- ofX - n until ofX + n if x >= 0 && x >= ofX - n && x < img.getWidth && x <= ofX + n) yield RGB.intToRGB(img.getRGB(x, ofY))).toList
     else (for (y <- ofY - n until ofY + n if y >= 0 && y >= ofY - n && y < img.getHeight && y <= ofY + n) yield RGB.intToRGB(img.getRGB(ofX, y))).toList
-//    def check(x: Int, y: Int, acc: List[RGB]): List[RGB] = {
-//      if (x < 0 || x < ofX - n || x > img.getWidth || x > ofX + n) acc
-//      else if (y < 0 || y < ofY - n || y > img.getHeight || y > ofY + n) acc
-//      else {
-//        img.getRGB(x, y) :: {
-//          if (o == Orientation.Horizontal) {
-//            check(x - 1, y, acc)
-//            check(x + 1, y, acc)
-//          } else if (o == Orientation.Vertical) {
-//            check(x, y - 1, acc)
-//            check(x, y + 1, acc)
-//          } else acc
-//        }
-//      }
-//    }
-//    check(ofX, ofY, List[RGB]())
   }
 
 }
@@ -65,7 +49,15 @@ object Operation {
   def fill(c: Color): Operation = (_: RGB) => RGB.intToRGB(c.getRGB)
   def add(value: Double): Operation = (rgb: RGB) => rgb + value
   def sub(value: Double): Operation = (rgb: RGB) => rgb - value
+  def revsub(value: Double): Operation = (rgb: RGB) => RGB(value - rgb.r, value - rgb.g, value - rgb.b)
+  def mul(value: Double): Operation = (rgb: RGB) => rgb * value
+  def div(value: Double): Operation = (rgb: RGB) => RGB(rgb.r / value, rgb.g / value, rgb.b / value)
+  def revdiv(value: Double): Operation = (rgb: RGB) => RGB(value / rgb.r, value / rgb.g, value / rgb.b)
   def pow(value: Double): Operation = (rgb: RGB) => RGB(math.pow(rgb.r, value), math.pow(rgb.g, value), math.pow(rgb.b, value))
+  def log(): Operation = (rgb: RGB) => RGB(math.log(rgb.r), math.log(rgb.g), math.log(rgb.b))
+  def abs(): Operation = (rgb: RGB) => RGB(math.abs(rgb.r), math.abs(rgb.g), math.abs(rgb.b))
+  def min(value: Double): Operation =  (rgb: RGB) => RGB(math.min(value, rgb.r), math.min(value, rgb.g), math.min(value, rgb.b))
+  def max(value: Double): Operation =  (rgb: RGB) => RGB(math.max(value, rgb.r), math.max(value, rgb.g), math.max(value, rgb.b))
   def inv(): Operation = (rgb: RGB) => RGB(1.0 - rgb.r, 1.0 - rgb.g, 1.0 -rgb.b)
   def grayscale(): Operation = (rgb: RGB) => {
     val avg: Double = (rgb.r + rgb.g + rgb.b) / 3.0

@@ -336,7 +336,7 @@ class MainWindow(var project: Project) extends MainFrame {
       preferredSize = new Dimension(400, 400)
       var composedOperation: Operation = Operation.id
       contents = new BoxPanel(Orientation.Vertical) {
-        val predefinedOperations: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub", "pow", "inv", "grayscale", "median") ++ project.operations.keys)
+        val predefinedOperations: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub", "revsub", "mul", "div", "revdiv", "pow", "log", "abs", "min", "max", "inv", "grayscale", "median") ++ project.operations.keys)
         contents += new FlowPanel() {
           contents += new Label("Operation") += predefinedOperations
         }
@@ -362,7 +362,15 @@ class MainWindow(var project: Project) extends MainFrame {
                 case "fill" => Operation.fill(new Color(valueField1.text.toFloat, valueField2.text.toFloat, valueField3.text.toFloat))
                 case "add" => Operation.add(valueField1.text.toDouble)
                 case "sub" => Operation.sub(valueField1.text.toDouble)
+                case "revsub" => Operation.revsub(valueField1.text.toDouble)
+                case "mul" => Operation.mul(valueField1.text.toDouble)
+                case "div" => Operation.div(valueField1.text.toDouble)
+                case "revdiv" => Operation.revdiv(valueField1.text.toDouble)
                 case "pow" => Operation.pow(valueField1.text.toDouble)
+                case "log" => Operation.log()
+                case "abs" => Operation.abs()
+                case "min" => Operation.min(valueField1.text.toDouble)
+                case "max" => Operation.max(valueField1.text.toDouble)
                 case "inv" => Operation.inv()
                 case "grayscale" => Operation.grayscale()
                 case "median" => Operation.median(valueField1.text.toInt, if (valueField2.text == "v") Orientation.Vertical else Orientation.Horizontal)
