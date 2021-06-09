@@ -6,8 +6,8 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import scala.swing.Orientation
 
-
-class Operation(val f: RGB => RGB) {
+@SerialVersionUID(104L)
+class Operation(val f: RGB => RGB) extends Serializable {
 
   def andThen(that: Operation): Operation = {
     if (this ne Operation.id) new Operation(this.f andThen that.f)

@@ -3,7 +3,7 @@ package ui
 import image.{Image, Operation}
 import project.{Project, Selection}
 
-import java.awt.Color
+import java.awt.{BasicStroke, Color}
 import java.io.File
 import javax.swing.filechooser.FileNameExtensionFilter
 import scala.collection.mutable.ArrayBuffer
@@ -15,6 +15,7 @@ import scala.swing.event.{ButtonClicked, MouseClicked, SelectionChanged, ValueCh
 class MainWindow(var project: Project) extends MainFrame {
   title = "Image Processing"
   preferredSize = new Dimension(1700, 900)
+  var displayActiveSelections = false
 
   contents = new BorderPanel {
     setContents()
@@ -46,17 +47,18 @@ class MainWindow(var project: Project) extends MainFrame {
     }
   }
 
-  def imagePanel: BoxPanel = new BoxPanel(Orientation.NoOrientation) {
-    border = LineBorder(Color.BLACK, 1)
-    refreshImage()
 
-    def refreshImage(): Unit = {
-      contents.clear()
-      contents += {
-        project.evaluateLayers()
-        project.evaluateOperations()
-        project.resultingImage
-      }
+
+  def imagePanel: Panel = new Panel() {
+    border = LineBorder(Color.BLACK, 1)
+
+    override protected def paintComponent(g: Graphics2D): Unit = {
+      super.paintComponent(g)
+      project.evaluateLayers()
+      project.evaluateOperations()
+      g.drawImage(project.resultingImage.img, 0, 0, null)
+      g.setStroke(new BasicStroke(3.0f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 3.0f, Array(10.0f, 10.0f), 0.0f))
+      if (displayActiveSelections) project.selections filter(s => s.active) foreach(s => g.draw(s))
     }
 
     val clickCoordinates: ArrayBuffer[(Int, Int)] = ArrayBuffer[(Int, Int)]()
@@ -75,9 +77,7 @@ class MainWindow(var project: Project) extends MainFrame {
           refresh()
         }
     }
-
   }
-
 
 
 
@@ -315,7 +315,8 @@ class MainWindow(var project: Project) extends MainFrame {
     listenTo(buttonShowHide)
     reactions += {
       case ButtonClicked(`buttonShowHide`) =>
-        project.selections filter(_.active) foreach(_.visible = true)
+        displayActiveSelections = !displayActiveSelections
+        refresh()
     }
     contents += buttonShowHide
   }

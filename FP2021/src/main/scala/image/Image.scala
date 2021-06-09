@@ -10,7 +10,7 @@ import javax.imageio.ImageIO
 import scala.swing.{Component, Graphics2D}
 
 @SerialVersionUID(102L)
-class Image private(val path: String = "", private val w: Int = 0, private val h: Int = 0, private val color: Color = null) extends Component with ImageObserver with Serializable {
+class Image private(val path: String = "", private val w: Int = 0, private val h: Int = 0, private val color: Color = null) extends Component with Serializable {
   @transient lazy val img: BufferedImage =
     if (path != "") ImageIO.read(new File(path))
     else Image.perform(Operation.fill(color), new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR))
@@ -25,18 +25,10 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
 
   override def paintComponent(g: Graphics2D): Unit = {
     super.paintComponent(g)
-    g.drawImage(img, 0, 0, this)
-  }
-
-  override def imageUpdate(img: awt.Image, infoflags: Int, x: Int, y: Int, width: Int, height: Int): Boolean = {
-    false
+    g.drawImage(img, 0, 0, null)
   }
 
   def perform(op: Operation, on: Array[Selection] = Array(new Selection(x, y, width, height))): Unit = {
-//    for (y <- 0 until height;
-//         x <- 0 until width) {
-//      if (on.exists(_.contains(x, y))) op(img, x, y)
-//    }
     op(img, on)
   }
 

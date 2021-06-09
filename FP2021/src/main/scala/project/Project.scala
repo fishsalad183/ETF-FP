@@ -9,7 +9,7 @@ import scala.collection.mutable.{ArrayBuffer, Map}
 @SerialVersionUID(100L)
 class Project private (val layers: ArrayBuffer[Layer], val imageWidth: Int, val imageHeight: Int) extends Serializable {
   val selections: ArrayBuffer[Selection] = ArrayBuffer(new Selection(0, 0, imageWidth, imageHeight))
-  val operations: Map[String, Operation] = Map("id" -> Operation.id())
+  val operations: Map[String, Operation] = Map("id" -> Operation.id)
   var operationsPerformed = ArrayBuffer[(String, ArrayBuffer[Selection])]()
   var currentLayer: Int = 0
   var currentSelection: Int = 0
@@ -61,9 +61,7 @@ class Project private (val layers: ArrayBuffer[Layer], val imageWidth: Int, val 
     this.resultingImage = layers.foldLeft(new Image(imageWidth, imageHeight, Color.WHITE))((image, layer) => image blend(layer.image, layer.opacity))
   }
 
-  def evaluateOperations(): Unit = {
-    for ((opName, sels) <- operationsPerformed) resultingImage.perform(operations(opName), sels.toArray)
-  }
+  def evaluateOperations(): Unit = for ((opName, sels) <- operationsPerformed) resultingImage.perform(operations(opName), sels.toArray)
 
 }
 
