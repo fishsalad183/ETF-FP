@@ -2,9 +2,8 @@ package image
 
 import project.Selection
 
-import java.awt
 import java.awt.Color
-import java.awt.image.{BufferedImage, ImageObserver}
+import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 import scala.swing.{Component, Graphics2D}
@@ -52,7 +51,6 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
   def export(outputFile: File, fileFormat: String): Unit = ImageIO.write(img, fileFormat, outputFile)
 
   override def toString: String = if (path != "") path.split("[\\\\/]").last else "Empty layer"
-
 }
 
 object Image {

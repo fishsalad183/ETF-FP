@@ -1,7 +1,7 @@
 package ui
 
 import image.{Image, Operation}
-import project.{Project, Selection}
+import project.Project
 
 import java.awt.{BasicStroke, Color}
 import java.io.File
@@ -48,7 +48,6 @@ class MainWindow(var project: Project) extends MainFrame {
   }
 
 
-
   def imagePanel: Panel = new Panel() {
     border = LineBorder(Color.BLACK, 1)
 
@@ -77,12 +76,11 @@ class MainWindow(var project: Project) extends MainFrame {
   }
 
 
-
   def projectPanel: GridPanel = new GridPanel(3, 1) {
     border = LineBorder(Color.BLACK, 1)
     contents += new Label("Project: " + project.imageWidth + "x" + project.imageHeight)
 
-    // create new project
+    // crating a new project
     val buttonNew = new Button("New")
     listenTo(buttonNew)
     reactions += {
@@ -112,7 +110,7 @@ class MainWindow(var project: Project) extends MainFrame {
       }
     }
 
-    // save project
+    // saving a project
     val buttonSave = new Button("Save")
     listenTo(buttonSave)
     reactions += {
@@ -133,7 +131,7 @@ class MainWindow(var project: Project) extends MainFrame {
         }
     }
 
-    // load project
+    // loading a project
     val buttonLoad = new Button("Load")
     listenTo(buttonLoad)
     reactions += {
@@ -164,7 +162,7 @@ class MainWindow(var project: Project) extends MainFrame {
       contents += buttonNew += buttonLoad += buttonSave
     }
 
-    // export image
+    // image exporting
     val buttonExport = new Button("Export image")
     listenTo(buttonExport)
     reactions += {
@@ -327,7 +325,7 @@ class MainWindow(var project: Project) extends MainFrame {
       contents += selectionChoice += checkboxActive += buttonDelete
     }
 
-    // showing/hiding selections
+    // showing/hiding active selections
     val buttonShowHide = new Button("Show/hide active")
     listenTo(buttonShowHide)
     reactions += {
@@ -344,7 +342,7 @@ class MainWindow(var project: Project) extends MainFrame {
     border = LineBorder(Color.BLACK, 1)
     contents += new Label("Operation")
 
-    // operation choice
+    // choosing an operation
     val operationChoice: ComboBox[String] = new ComboBox[String](project.operations.keys.toSeq) {
       selection.item = project.currentOperation
     }

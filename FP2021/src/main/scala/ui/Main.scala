@@ -1,27 +1,22 @@
 package ui
 
-import image.{Image, Operation}
-import project.{Layer, Project, Selection}
+import image.Image
+import project.{Layer, Project}
 
-import java.awt.Color
 import scala.collection.mutable.ArrayBuffer
 import scala.swing._
 
 object Main extends SimpleSwingApplication {
 
-//  val img1: Image = new Image
-  val img2: Image = {
-    val img = new Image(800, 600, Color.WHITE)
-    img.perform(Operation.fill(Color.BLACK), Array(new Selection(0, 0, 1280, 800)))
-    img
+  def createTestProject(): Project = {
+    val testImg1: Image = new Image("src/resource/image/wallpapersden.com_british-columbia-foggy-forest_800x600.jpg")
+    val testImg2: Image = new Image("src/resource/image/wallpapersden.com_cave-lake_800x600.jpg")
+    val testImg3: Image = new Image("src/resource/image/wallpapersden.com_lake-lucerne_800x600.jpg")
+    new Project(ArrayBuffer(new Layer(testImg1, 0.3, false), new Layer(testImg2, 0.3), new Layer(testImg3, 0.5)))
   }
-  val img3: Image = new Image("src/resource/image/wallpapersden.com_british-columbia-foggy-forest_800x600.jpg")
-  val img4: Image = new Image("src/resource/image/wallpapersden.com_cave-lake_800x600.jpg")
-  val img5: Image = new Image("src/resource/image/wallpapersden.com_lake-lucerne_800x600.jpg")
-  var project = new Project(ArrayBuffer(new Layer(img3, 0.3, false), new Layer(img4, 0.3), new Layer(img5, 0.5)))
 
   override def top: Frame = {
-    val ui = new MainWindow(project)
+    val ui = new MainWindow(createTestProject())
     ui.visible = true
     ui
   }
