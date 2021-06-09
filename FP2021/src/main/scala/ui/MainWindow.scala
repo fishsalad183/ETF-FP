@@ -15,7 +15,7 @@ import scala.swing.event.{ButtonClicked, MouseClicked, SelectionChanged, ValueCh
 class MainWindow(var project: Project) extends MainFrame {
   title = "Image Processing"
   preferredSize = new Dimension(1700, 900)
-  var displayActiveSelections = false
+  private var displayActiveSelections = false
 
   contents = new BorderPanel {
     setContents()
@@ -39,7 +39,7 @@ class MainWindow(var project: Project) extends MainFrame {
     }
   }
 
-  def refresh(guiOnly: Boolean = false): Unit = {
+  def refresh(): Unit = {
     super.repaint()
     for (content <- contents) {
       content.repaint()
@@ -54,8 +54,6 @@ class MainWindow(var project: Project) extends MainFrame {
 
     override protected def paintComponent(g: Graphics2D): Unit = {
       super.paintComponent(g)
-      project.evaluateLayers()
-      project.evaluateOperations()
       g.drawImage(project.resultingImage.img, 0, 0, null)
       g.setStroke(new BasicStroke(3.0f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 3.0f, Array(10.0f, 10.0f), 0.0f))
       if (displayActiveSelections) project.selections filter(s => s.active) foreach(s => g.draw(s))
@@ -71,8 +69,7 @@ class MainWindow(var project: Project) extends MainFrame {
           val y1 = clickCoordinates(0)._2
           val x2 = clickCoordinates(1)._1
           val y2 = clickCoordinates(1)._2
-          project.selections += new Selection(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(y1 - y2))
-          project.currentSelection = project.selections.indices.last
+          project.createNewSelection(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(y1 - y2))
           clickCoordinates.clear()
           refresh()
         }
@@ -90,8 +87,29 @@ class MainWindow(var project: Project) extends MainFrame {
     listenTo(buttonNew)
     reactions += {
       case ButtonClicked(`buttonNew`) =>
-        project = new Project(1280, 800)
+        resolutionSelectionPopup.visible = true
         refresh()
+    }
+
+    val resolutionSelectionPopup: Frame = new Frame() {
+      title = "New project"
+      preferredSize = new Dimension(400, 100)
+      contents = new BoxPanel(Orientation.Vertical) {
+        val widthField = new TextField(10)
+        val heightField = new TextField(10)
+        contents += new FlowPanel() {
+          contents += new Label("Resolution: ") += widthField += new Label("x") += heightField
+        }
+        val buttonCreate = new Button("Create")
+        listenTo(buttonCreate)
+        reactions += {
+          case ButtonClicked(`buttonCreate`) =>
+            project = new Project(widthField.text.toInt, heightField.text.toInt)
+            close()
+            refresh()
+        }
+        contents += buttonCreate
+      }
     }
 
     // save project
@@ -173,99 +191,98 @@ class MainWindow(var project: Project) extends MainFrame {
 
   def layerPanel: GridPanel = new GridPanel(4, 1) {
     border = LineBorder(Color.BLACK, 1)
-    setContents()
+    contents += new Label("Layer")
 
-    def setContents(): Unit = {
-      contents.clear()
-      contents += new Label("Layer")
+    // creating a new empty layer
+    val buttonNewEmptyLayer = new Button("New empty layer")
+    listenTo(buttonNewEmptyLayer)
+    reactions += {
+      case ButtonClicked(`buttonNewEmptyLayer`) =>
+        project.createNewLayer(new Image(project.imageWidth, project.imageHeight, Color.WHITE))
+        refresh()
+    }
 
-      // creating a new empty layer
-      val buttonNewEmptyLayer = new Button("New empty layer")
-      listenTo(buttonNewEmptyLayer)
-      reactions += {
-        case ButtonClicked(`buttonNewEmptyLayer`) =>
-          project.createNewLayer(new Image(project.imageWidth, project.imageHeight, Color.WHITE))
-          refresh()
-      }
-
-      // loading images
-      val buttonLoadImage = new Button("Load image")
-      listenTo(buttonLoadImage)
-      reactions += {
-        case ButtonClicked(`buttonLoadImage`) =>
-          def chooseFile(): Option[File] = {
-            val chooser = new FileChooser() {
-              fileSelectionMode = FileChooser.SelectionMode.FilesOnly
-              fileFilter = new FileNameExtensionFilter(".jp(e)g, .png", "jpg", "jpeg", "png")
-            }
-            val result = chooser.showOpenDialog(null)
-            if (result == FileChooser.Result.Approve) Some(chooser.selectedFile)
-            else None
+    // loading images
+    val buttonLoadImage = new Button("Load image")
+    listenTo(buttonLoadImage)
+    reactions += {
+      case ButtonClicked(`buttonLoadImage`) =>
+        def chooseFile(): Option[File] = {
+          val chooser = new FileChooser() {
+            fileSelectionMode = FileChooser.SelectionMode.FilesOnly
+            fileFilter = new FileNameExtensionFilter(".jp(e)g, .png", "jpg", "jpeg", "png")
           }
+          val result = chooser.showOpenDialog(null)
+          if (result == FileChooser.Result.Approve) Some(chooser.selectedFile)
+          else None
+        }
 
-          chooseFile() match {
-            case Some(file) =>
-              project.createNewLayer(new Image(file.getPath))
-              refresh()
-            case None =>
-          }
-      }
+        chooseFile() match {
+          case Some(file) =>
+            project.createNewLayer(new Image(file.getPath))
+            refresh()
+          case None =>
+        }
+    }
 
-      contents += new FlowPanel {
-        contents += buttonNewEmptyLayer += buttonLoadImage
-      }
+    contents += new FlowPanel {
+      contents += buttonNewEmptyLayer += buttonLoadImage
+    }
 
-      // choosing layers
-      val layersChoice = new ComboBox[String](project.layers.zipWithIndex map(layerAndIndex => (layerAndIndex._2 + 1) + ": " + layerAndIndex._1.image.toString())) {
-        selection.index = project.currentLayer
-      }
-      listenTo(layersChoice.selection)
-      reactions += {
-        case SelectionChanged(`layersChoice`) =>
-          project.currentLayer = layersChoice.selection.index
+    // choosing layers
+    val layersChoice = new ComboBox[String](project.layers.zipWithIndex map(layerAndIndex => (layerAndIndex._2 + 1) + ": " + layerAndIndex._1.image.toString())) {
+      preferredSize = new Dimension(150, preferredSize.height)
+      tooltip = project.layers(project.currentLayer).image.path
+      selection.index = project.currentLayer
+    }
+    listenTo(layersChoice.selection)
+    reactions += {
+      case SelectionChanged(`layersChoice`) =>
+        project.currentLayer = layersChoice.selection.index
+        refresh()
+    }
+
+    // activating/deactivating a layer
+    val checkboxActive = new CheckBox("Active") {
+      selected = project.layers(project.currentLayer).active
+    }
+    listenTo(checkboxActive)
+    reactions += {
+      case ButtonClicked(`checkboxActive`) =>
+        project.toggleCurrentLayerActive()
+        refresh()
+    }
+
+    // deleting a layer
+    val buttonDelete = new Button("Delete")
+    listenTo(buttonDelete)
+    reactions += {
+      case ButtonClicked(`buttonDelete`) =>
+        project.deleteCurrentLayer()
+        refresh()
+    }
+
+    contents += new FlowPanel {
+      contents += layersChoice += checkboxActive += buttonDelete
+    }
+
+    // setting opacity
+    val opacitySlider = new Slider {
+      min = 0
+      max = 100
+      value = (project.layers(project.currentLayer).opacity * 100).toInt
+      labels = Map(min -> new Label("0.00"), max -> new Label("1.00"))
+    }
+    listenTo(opacitySlider)
+    reactions += {
+      case ValueChanged(`opacitySlider`) =>
+        if (!opacitySlider.adjusting) {
+          project.setCurrentLayerOpacity(opacitySlider.value.toDouble / 100.0)
           refresh()
-      }
-
-      // activating/deactivating a layer
-      val checkboxActive = new CheckBox("Active") {
-        selected = project.layers(project.currentLayer).active
-      }
-      listenTo(checkboxActive)
-      reactions += {
-        case ButtonClicked(`checkboxActive`) =>
-          project.layers(project.currentLayer).active = !project.layers(project.currentLayer).active
-          refresh()
-      }
-
-      // deleting a layer
-      val buttonDelete = new Button("Delete")
-      listenTo(buttonDelete)
-      reactions += {
-        case ButtonClicked(`buttonDelete`) =>
-          project.deleteCurrentLayer()
-          refresh()
-      }
-
-      contents += new FlowPanel {
-        contents += layersChoice += checkboxActive += buttonDelete
-      }
-
-      // setting opacity
-      val opacitySlider = new Slider {
-        min = 0
-        max = 100
-        value = (project.layers(project.currentLayer).opacity * 100).toInt
-        labels = Map(min -> new Label("0.00"), max -> new Label("1.00"))
-      }
-      listenTo(opacitySlider)
-      reactions += {
-        case ValueChanged(`opacitySlider`) =>
-          project.layers(project.currentLayer).opacity = opacitySlider.value.toDouble / 100.0
-          if (!opacitySlider.adjusting && project.layers(project.currentLayer).active) refresh()
-      }
-      contents += new FlowPanel {
-        contents += new Label("Opacity") += opacitySlider
-      }
+        }
+    }
+    contents += new FlowPanel {
+      contents += new Label("Opacity") += opacitySlider
     }
   }
 
@@ -293,7 +310,7 @@ class MainWindow(var project: Project) extends MainFrame {
     listenTo(checkboxActive)
     reactions += {
       case ButtonClicked(`checkboxActive`) =>
-        project.selections(project.currentSelection).active = !project.selections(project.currentSelection).active
+        project.toggleCurrentSelectionActive()
         refresh()
     }
 
@@ -333,8 +350,10 @@ class MainWindow(var project: Project) extends MainFrame {
     }
 
     // creating a new operation
-    def operationsPopup: Frame = new Frame() {
+    val operationsPopup: Frame = new Frame() {
+      title = "New operation"
       preferredSize = new Dimension(400, 400)
+
       var composedOperation: Operation = Operation.id
       contents = new BoxPanel(Orientation.Vertical) {
         val predefinedOperations: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub", "revsub", "mul", "div", "revdiv", "pow", "log", "abs", "min", "max", "inv", "grayscale", "median") ++ project.operations.keys)
@@ -392,9 +411,8 @@ class MainWindow(var project: Project) extends MainFrame {
         listenTo(buttonCreate)
         reactions += {
           case ButtonClicked(`buttonCreate`) =>
-            project.operations += (nameField.text -> composedOperation)
+            project.createNewOperation(nameField.text, composedOperation)
             close()
-            project.currentOperation = nameField.text
             refresh()
         }
 
@@ -420,7 +438,7 @@ class MainWindow(var project: Project) extends MainFrame {
     listenTo(buttonApply)
     reactions += {
       case ButtonClicked(`buttonApply`) =>
-        project.operationsPerformed += ((operationChoice.selection.item, project.selections filter(_.active)))
+        project.perform(operationChoice.selection.item)
         refresh()
     }
     contents += buttonApply

@@ -51,7 +51,7 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
 
   def export(outputFile: File, fileFormat: String): Unit = ImageIO.write(img, fileFormat, outputFile)
 
-  override def toString: String = if (path != "") path.split("[\\\\/]").last else color.toString
+  override def toString: String = if (path != "") path.split("[\\\\/]").last else "Empty layer"
 
 }
 
