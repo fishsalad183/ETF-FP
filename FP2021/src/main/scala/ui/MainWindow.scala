@@ -1,6 +1,6 @@
 package ui
 
-import image.{Image, Operation}
+import image.{Image, Operation, OperationSequence, SimpleOperation}
 import project.Project
 
 import java.awt.{BasicStroke, Color}
@@ -228,7 +228,7 @@ class MainWindow(var project: Project) extends MainFrame {
     }
 
     // choosing layers
-    val layersChoice = new ComboBox[String](project.layers.zipWithIndex map(layerAndIndex => (layerAndIndex._2 + 1) + ": " + layerAndIndex._1.image.toString())) {
+    val layersChoice: ComboBox[String] = new ComboBox[String](project.layers.zipWithIndex map(layerAndIndex => (layerAndIndex._2 + 1) + ": " + layerAndIndex._1.image.toString())) {
       preferredSize = new Dimension(150, preferredSize.height)
       tooltip = project.layers(project.currentLayer).image.path
       selection.index = project.currentLayer
@@ -241,7 +241,7 @@ class MainWindow(var project: Project) extends MainFrame {
     }
 
     // activating/deactivating a layer
-    val checkboxActive = new CheckBox("Active") {
+    val checkboxActive: CheckBox = new CheckBox("Active") {
       selected = project.layers(project.currentLayer).active
     }
     listenTo(checkboxActive)
@@ -265,7 +265,7 @@ class MainWindow(var project: Project) extends MainFrame {
     }
 
     // setting opacity
-    val opacitySlider = new Slider {
+    val opacitySlider: Slider = new Slider {
       min = 0
       max = 100
       value = (project.layers(project.currentLayer).opacity * 100).toInt
@@ -350,25 +350,33 @@ class MainWindow(var project: Project) extends MainFrame {
     // creating a new operation
     val operationsPopup: Frame = new Frame() {
       title = "New operation"
-      preferredSize = new Dimension(400, 400)
+      preferredSize = new Dimension(800, 400)
 
-      var composedOperation: Operation = Operation.id
+      val nameField = new TextField(20)
+      val grid = new GridPanel(1, 3)
       contents = new BoxPanel(Orientation.Vertical) {
-        val predefinedOperations: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub", "revsub", "mul", "div", "revdiv", "pow", "log", "abs", "min", "max", "inv", "grayscale", "median") ++ project.operations.keys)
         contents += new FlowPanel() {
-          contents += new Label("Operation") += predefinedOperations
+          contents += new Label("Function name: ") += nameField
         }
-        val valueField1 = new TextField(20)
+        contents += grid
+      }
+
+      // simple operations
+      grid.contents += new BoxPanel(Orientation.Vertical) {
+        var composedOperation: SimpleOperation = Operation.id
+
+        val simpleOps: ComboBox[String] = new ComboBox[String](Seq("fill", "add", "sub", "revsub", "mul", "div", "revdiv", "pow", "log", "abs", "min", "max", "inv", "grayscale") ++ project.operations.filter{
+          case (_, op) => op.isInstanceOf[SimpleOperation]
+        } .keys)
         contents += new FlowPanel() {
-          contents += new Label("Value 1") += valueField1
+          contents += new Label("Simple operation") += simpleOps
         }
-        val valueField2 = new TextField(20)
-        contents += new FlowPanel() {
-          contents += new Label("Value 2") += valueField2
-        }
-        val valueField3 = new TextField(20)
-        contents += new FlowPanel() {
-          contents += new Label("Value 3") += valueField3
+        val simpleOpValueFields: Array[TextField] = Array.fill[TextField](3)(new TextField(20))
+        simpleOpValueFields.zipWithIndex.foreach {
+          case (field, i) =>
+            contents += new FlowPanel() {
+              contents += new Label("Value " + i.toString) += field
+            }
         }
 
         val buttonCompose = new Button("Compose")
@@ -376,34 +384,29 @@ class MainWindow(var project: Project) extends MainFrame {
         reactions += {
           case ButtonClicked(`buttonCompose`) =>
             composedOperation = composedOperation andThen {
-              predefinedOperations.selection.item match {
-                case "fill" => Operation.fill(new Color(valueField1.text.toFloat, valueField2.text.toFloat, valueField3.text.toFloat))
-                case "add" => Operation.add(valueField1.text.toDouble)
-                case "sub" => Operation.sub(valueField1.text.toDouble)
-                case "revsub" => Operation.revsub(valueField1.text.toDouble)
-                case "mul" => Operation.mul(valueField1.text.toDouble)
-                case "div" => Operation.div(valueField1.text.toDouble)
-                case "revdiv" => Operation.revdiv(valueField1.text.toDouble)
-                case "pow" => Operation.pow(valueField1.text.toDouble)
+              simpleOps.selection.item match {
+                case "fill" => Operation.fill(new Color(simpleOpValueFields(0).text.toFloat, simpleOpValueFields(1).text.toFloat, simpleOpValueFields(2).text.toFloat))
+                case "add" => Operation.add(simpleOpValueFields(0).text.toDouble)
+                case "sub" => Operation.sub(simpleOpValueFields(0).text.toDouble)
+                case "revsub" => Operation.revsub(simpleOpValueFields(0).text.toDouble)
+                case "mul" => Operation.mul(simpleOpValueFields(0).text.toDouble)
+                case "div" => Operation.div(simpleOpValueFields(0).text.toDouble)
+                case "revdiv" => Operation.revdiv(simpleOpValueFields(0).text.toDouble)
+                case "pow" => Operation.pow(simpleOpValueFields(0).text.toDouble)
                 case "log" => Operation.log()
                 case "abs" => Operation.abs()
-                case "min" => Operation.min(valueField1.text.toDouble)
-                case "max" => Operation.max(valueField1.text.toDouble)
+                case "min" => Operation.min(simpleOpValueFields(0).text.toDouble)
+                case "max" => Operation.max(simpleOpValueFields(0).text.toDouble)
                 case "inv" => Operation.inv()
                 case "grayscale" => Operation.grayscale()
-                case "median" => Operation.median(valueField1.text.toInt, if (valueField2.text == "v") Orientation.Vertical else Orientation.Horizontal)
-                case custom => project.operations(custom)
+                case custom => project.operations(custom).asInstanceOf[SimpleOperation]
               }
             }
             buttonCreate.enabled = true
         }
+        contents += buttonCompose
 
-        contents += new FlowPanel() {
-          contents += buttonCompose
-        }
-
-        val nameField = new TextField(20)
-        val buttonCreate = new Button("Create") {
+        val buttonCreate: Button = new Button("Create composite") {
           enabled = false
         }
         listenTo(buttonCreate)
@@ -413,11 +416,63 @@ class MainWindow(var project: Project) extends MainFrame {
             close()
             refresh()
         }
-
-        contents += new FlowPanel() {
-          contents += nameField += buttonCreate
-        }
+        contents += buttonCreate
       }
+
+      // filter operations
+      grid.contents += new BoxPanel(Orientation.Vertical) {
+        val filterOps: ComboBox[String] = new ComboBox[String](Seq("median"))
+        contents += new FlowPanel() {
+          contents += new Label("Filter operations") += filterOps
+        }
+        val filterOpValueFields: Array[TextField] = Array.fill[TextField](3)(new TextField(20))
+        filterOpValueFields.zipWithIndex.foreach {
+          case (field, i) =>
+            contents += new FlowPanel() {
+              contents += new Label("Value " + i.toString) += field
+            }
+        }
+
+        val buttonCreate = new Button("Create filtering")
+        listenTo(buttonCreate)
+        reactions += {
+          case ButtonClicked(`buttonCreate`) =>
+            val newOp = filterOps.selection.item match {
+              case "median" => Operation.median(filterOpValueFields(0).text.toInt, if (filterOpValueFields(1).text == "v") Orientation.Vertical else Orientation.Horizontal)
+            }
+            project.createNewOperation(nameField.text, newOp)
+            close()
+            refresh()
+        }
+        contents += buttonCreate
+      }
+
+      // operation sequence
+      grid.contents += new BoxPanel(Orientation.Vertical) {
+        val allOps: ComboBox[String] = new ComboBox[String](project.operations.keys.toSeq)
+        contents += new FlowPanel() {
+          contents += new Label("All operations") += allOps
+        }
+        var ops: List[Operation] = List()
+
+        val buttonAdd = new Button("Add to sequence")
+        listenTo(buttonAdd)
+        reactions += {
+          case ButtonClicked(`buttonAdd`) => ops :+= project.operations(allOps.selection.item)
+        }
+        contents += buttonAdd
+
+        val buttonCreate = new Button("Create sequence")
+        listenTo(buttonCreate)
+        reactions += {
+          case ButtonClicked(`buttonCreate`) =>
+            project.createNewOperation(nameField.text, new OperationSequence(ops))
+            close()
+            refresh()
+        }
+        contents += buttonCreate
+      }
+
     }
 
     val buttonNew = new Button("New")

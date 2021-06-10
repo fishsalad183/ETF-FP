@@ -1,6 +1,8 @@
 package image
 
 case class RGB(private var red: Double, private var green: Double, private var blue: Double, private val checkingComponentValidity: Boolean = true) {
+  def this(rgb: (Int, Int, Int)) = this(rgb._1, rgb._2, rgb._3)
+
   if (checkingComponentValidity) {
     if (red < 0) red = 0 else if (red > 1.0) red = 1.0
     if (green < 0) green = 0 else if (green > 1.0) green = 1.0

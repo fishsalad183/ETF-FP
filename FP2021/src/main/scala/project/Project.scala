@@ -89,10 +89,12 @@ class Project private (val layers: ArrayBuffer[Layer], val imageWidth: Int, val 
         layers.update(layers.length - 1, new Layer(layers.last.image, layers.last.opacity - (opacitySum - 1.0), true))
       }
 
-      this.resultingImage = layers.foldLeft(new Image(imageWidth, imageHeight, Color.WHITE))((image, layer) => image blend(layer.image, layer.opacity))
+      resultingImage = layers.foldLeft(new Image(imageWidth, imageHeight, Color.WHITE))((image, layer) => image blend(layer.image, layer.opacity))
     }
 
-    def evaluateOperations(): Unit = for ((opName, sels) <- operationsPerformed) resultingImage.perform(operations(opName), sels.toArray)
+    def evaluateOperations(): Unit = {
+      resultingImage = operationsPerformed.foldLeft(resultingImage)((img, opAndSel) => operations(opAndSel._1).apply(img, opAndSel._2.toArray))
+    }
   }
 
   def perform(operation: String): Unit = {

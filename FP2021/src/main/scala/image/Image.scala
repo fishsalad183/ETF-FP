@@ -9,13 +9,16 @@ import javax.imageio.ImageIO
 import scala.swing.{Component, Graphics2D}
 
 @SerialVersionUID(102L)
-class Image private(val path: String = "", private val w: Int = 0, private val h: Int = 0, private val color: Color = null) extends Component with Serializable {
-  @transient lazy val img: BufferedImage =
-    if (path != "") ImageIO.read(new File(path))
-    else Image.perform(Operation.fill(color), new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR))
+class Image (val path: String = "", bufferedImage: BufferedImage) extends Component with Serializable {
+//  def this(image: Image) = this(image.img, null)
+  def this(path: String) = this(path, null)
+  def this(bufferedImage: BufferedImage) = this("", bufferedImage)
+  def this(width: Int, height: Int, color: Color) = this(Operation.fill(color)(new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR), Array(new Selection(0, 0, width, height))).img)
 
-  def this(path: String) = this(path, 0, 0, null)
-  def this(width: Int, height: Int, color: Color) = this("", width, height, color)
+  @transient lazy val img: BufferedImage = {
+    if (bufferedImage == null) ImageIO.read(new File(path))
+    else bufferedImage
+  }
 
   def x: Int = img.getMinX
   def y: Int = img.getMinY
@@ -25,10 +28,6 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
   override def paintComponent(g: Graphics2D): Unit = {
     super.paintComponent(g)
     g.drawImage(img, 0, 0, null)
-  }
-
-  def perform(op: Operation, on: Array[Selection] = Array(new Selection(x, y, width, height))): Unit = {
-    op(img, on)
   }
 
   def blend(that: Image, opacity: Double): Image = {
@@ -54,12 +53,7 @@ class Image private(val path: String = "", private val w: Int = 0, private val h
 }
 
 object Image {
+  def load(path: String): BufferedImage = ImageIO.read(new File(path))
+
   def copy(bi: BufferedImage): BufferedImage = new BufferedImage(bi.getColorModel, bi.copyData(null), bi.getColorModel.isAlphaPremultiplied, null)
-
-  private def perform(op: Operation, bi: BufferedImage): BufferedImage = {
-    val modifiedImage = Image.copy(bi)
-    op(modifiedImage, Array(new Selection(0, 0, modifiedImage.getWidth, modifiedImage.getHeight)))
-    modifiedImage
-  }
-
 }
