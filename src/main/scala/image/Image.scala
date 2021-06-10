@@ -10,6 +10,7 @@ import scala.swing.{Component, Graphics2D}
 
 @SerialVersionUID(102L)
 class Image (val path: String = "", bufferedImage: BufferedImage) extends Component with Serializable {
+//  def this(image: Image) = this(image.img, null)
   def this(path: String) = this(path, null)
   def this(bufferedImage: BufferedImage) = this("", bufferedImage)
   def this(width: Int, height: Int, color: Color) = this(Operation.fill(color)(new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR), Array(new Selection(0, 0, width, height))).img)
